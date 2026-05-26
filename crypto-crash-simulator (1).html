@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIA4U.01 Crypto Sim 💸</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =============================================
+   CSS VARIABLES & RESET
+   ============================================= */
+:root {
+  --bg:        #0a0e1a;
+  --surface:   #111827;
+  --surface2:  #1a2234;
+  --border:    #1e2d45;
+  --accent:    #00f5a0;
+  --accent2:   #00b4d8;
+  --danger:    #ff4d6d;
+  --warning:   #ffd166;
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --up:        #00f5a0;
+  --down:      #ff4d6d;
+  --font-mono: 'Space Mono', monospace;
+  --font-display: 'Bebas Neue', cursive;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* =============================================
+   ANIMATED BACKGROUND GRID
+   ============================================= */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,245,160,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,160,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* =============================================
+   SCREEN MANAGEMENT
+   ============================================= */
+.screen { display: none; position: relative; z-index: 1; }
+.screen.active { display: block; }
+
+/* =============================================
+   START SCREEN
+   ============================================= */
+#start-screen {
+  min-height: 100vh;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+#start-screen.active { display: flex; }
+
+.logo-area {
+  margin-bottom: 2rem;
+  animation: floatIn 0.8s ease both;
+}
+
+.logo-emoji { font-size: 5rem; display: block; animation: spin 8s linear infinite; }
+
+.game-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 10vw, 6rem);
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--warning));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.game-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+
+.start-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 520px;
+  width: 100%;
+  margin-bottom: 2rem;
+  animation: floatIn 0.8s ease 0.2s both;
+}
+
+.start-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+  color: var(--warning);
+  margin-bottom: 1rem;
+}
+
+.start-card p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.rules-list {
+  list-style: none;
+  margin: 1rem 0;
+  text-align: left;
+}
+.rules-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.rules-list li::before { content: '→ '; color: var(--accent); font-weight: bold; }
+
+.name-input-wrap {
+  margin: 1.5rem 0 0.5rem;
+  text-align: left;
+}
+.name-input-wrap label {
+  display: block;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+.name-input-wrap input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.name-input-wrap input:focus { border-color: var(--accent); }
+.name-input-wrap input::placeholder { color: var(--muted); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2.5rem;
+  border-radius: 10px;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  text-decoration: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #0a0e1a;
+  box-shadow: 0 0 30px rgba(0,245,160,0.3);
+}
+.btn-primary:hover { box-shadow: 0 0 45px rgba(0,245,160,0.5); filter: brightness(1.1); }
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #c9184a);
+  color: white;
+  box-shadow: 0 0 20px rgba(255,77,109,0.3);
+}
+.btn-danger:hover { box-shadow: 0 0 35px rgba(255,77,109,0.5); }
+.btn-small {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  min-width: 0;
+  letter-spacing: 0.5px;
+}
+.btn-buy { background: rgba(0,245,160,0.15); color: var(--accent); border: 1px solid var(--accent); }
+.btn-buy:hover { background: rgba(0,245,160,0.25); }
+.btn-sell { background: rgba(255,77,109,0.15); color: var(--danger); border: 1px solid var(--danger); }
+.btn-sell:hover { background: rgba(255,77,109,0.25); }
+.btn-sell:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* =============================================
+   GAME SCREEN
+   ============================================= */
+#game-screen {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* TOP BAR */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.top-bar-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.timer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.timer-label { font-size: 0.65rem; font-family: var(--font-mono); color: var(--muted); letter-spacing: 2px; }
+.timer {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--warning);
+  transition: color 0.3s;
+}
+.timer.urgent { color: var(--danger); animation: pulse 0.5s ease infinite alternate; }
+
+.stats-bar {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.stat-item { display: flex; flex-direction: column; align-items: flex-start; }
+.stat-label { font-size: 0.65rem; font-family: var(--font-mono); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.stat-value { font-family: var(--font-mono); font-size: 1rem; font-weight: 700; color: var(--text); }
+.stat-value.positive { color: var(--up); }
+.stat-value.negative { color: var(--down); }
+
+/* MAIN LAYOUT */
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+.game-layout > * { min-width: 0; }
+
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+}
+
+@media (max-width: 1000px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* COIN TABLE PANEL */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: visible;
+  min-width: 0;
+}
+/* Give the market panel horizontal scroll internally if needed */
+.panel.market-panel { overflow-x: auto; overflow-y: visible; }
+/* Restore border-radius clipping without clipping grid children */
+.panel > :first-child { border-radius: 12px 12px 0 0; }
+.panel > :last-child  { border-radius: 0 0 12px 12px; }
+.panel-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+
+/* =============================================
+   MARKET GRID — shared by header AND every coin row
+   Header: .market-header.market-grid
+   Rows:   .coin-row.market-grid
+   Both have exactly 6 direct children in the same order.
+   ============================================= */
+#coin-table-body {
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+.market-grid {
+  display: grid !important;
+  grid-template-columns: 140px 100px 90px 110px 60px 95px !important;
+  align-items: center;
+  column-gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.market-header {
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.coin-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.2s;
+}
+.coin-row:hover { background: var(--surface2); }
+.coin-row:last-child { border-bottom: none; }
+
+/* All 6 cells: no overflow bleed */
+.coin-info,
+.price-cell,
+.change-cell,
+.chart-cell,
+.held-cell,
+.trade-controls { min-width: 0; }
+
+/* Col 1 — Coin */
+.coin-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.coin-symbol    { font-family: var(--font-mono); font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coin-full-name { font-size: 0.66rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Col 2 — Price */
+.price-cell {
+  font-family: var(--font-mono); font-weight: 700; font-size: 0.9rem;
+  white-space: nowrap; display: block; transition: color 0.4s;
+}
+.price-cell.flash-up   { color: var(--up)   !important; }
+.price-cell.flash-down { color: var(--down) !important; }
+
+/* Col 3 — 24h % */
+.change-cell { display: flex; align-items: center; }
+.change-badge {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 0.18rem 0.4rem; border-radius: 6px;
+  font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700;
+  white-space: nowrap;
+}
+.change-badge.up   { background: rgba(0,245,160,0.12); color: var(--up); }
+.change-badge.down { background: rgba(255,77,109,0.12); color: var(--down); }
+
+/* Col 4 — Chart */
+.chart-cell { display: flex; justify-content: center; align-items: center; }
+.sparkline  { display: block; }
+
+/* Col 5 — Held */
+.held-cell {
+  display: flex; justify-content: center; align-items: center;
+  font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent2);
+  white-space: nowrap; text-align: center;
+}
+
+/* Col 6 — Trade controls */
+.trade-controls {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  width: 95px;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.trade-controls .qty-input,
+.trade-controls .btn-small {
+  width: 95px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* =============================================
+   DESKTOP/MOBILE VISIBILITY TOGGLES
+   ============================================= */
+.desktop-market-only { display: block; }
+.mobile-market-list  { display: none; }
+
+/* =============================================
+   MOBILE CARD LAYOUT — completely separate DOM
+   ============================================= */
+.mobile-coin-card {
+  width: 100%; box-sizing: border-box;
+  display: grid; grid-template-columns: 1fr 86px;
+  gap: 12px; padding: 14px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05); overflow: hidden;
+}
+.mobile-coin-card:last-child { border-bottom: none; }
+
+.mobile-coin-left {
+  min-width: 0; display: flex; flex-direction: column;
+  gap: 4px; overflow: hidden;
+}
+.mobile-coin-left .coin-symbol    { font-family: var(--font-mono); font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mobile-coin-left .coin-full-name { font-size: 0.66rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.mobile-price-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }
+.mobile-price-row .price-cell { font-size: 0.92rem; white-space: nowrap; }
+
+.mobile-held {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.mobile-coin-right {
+  width: 90px; min-width: 90px; max-width: 90px;
+  display: flex; flex-direction: column; gap: 5px;
+  align-items: stretch; flex-shrink: 0;
+}
+.mobile-coin-right .qty-input,
+.mobile-coin-right .btn-small {
+  width: 90px; max-width: 90px; font-size: 11px;
+  padding: 7px 4px; min-width: unset;
+  box-sizing: border-box; text-align: center;
+}
+
+/* Qty input base */
+.qty-input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.33rem 0.3rem;
+  color: var(--text); font-family: var(--font-mono);
+  font-size: 0.8rem; text-align: center; outline: none;
+}
+.qty-input:focus { border-color: var(--accent); }
+
+/* =============================================
+   MOBILE MEDIA QUERY ≤700px
+   ============================================= */
+@media (max-width: 700px) {
+  html, body, #game-screen, .game-layout, .panel,
+  #coin-table-body, #mobile-market {
+    width: 100%; max-width: 100%; min-width: 0;
+    overflow-x: hidden; box-sizing: border-box;
+  }
+
+  /* Hide desktop market entirely, show mobile cards */
+  .desktop-market-only { display: none !important; }
+  .mobile-market-list  { display: flex !important; flex-direction: column; width: 100%; }
+
+  /* Show Held on mobile card left side */
+  .mobile-held {
+    display: block !important;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  /* Hide chart on mobile (desktop only) */
+  .chart-cell { display: none !important; }
+
+  .stats-bar { gap: 0.8rem; }
+  .top-bar   { flex-direction: column; align-items: stretch; }
+  #notif-container { bottom: 0.75rem; right: 0.75rem; }
+  .notif { max-width: 210px; font-size: 0.74rem; }
+  .end-stats { grid-template-columns: 1fr; }
+}
+
+/* =============================================
+   RIGHT SIDEBAR
+   ============================================= */
+.sidebar { display: flex; flex-direction: column; gap: 1rem; }
+
+/* NEWS FEED */
+.news-feed { max-height: 320px; overflow-y: auto; }
+.news-feed::-webkit-scrollbar { width: 4px; }
+.news-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.news-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(30,45,69,0.6);
+  animation: slideIn 0.4s ease both;
+}
+.news-item:last-child { border-bottom: none; }
+.news-time  { font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); margin-bottom: 0.25rem; }
+.news-text  { font-size: 0.85rem; line-height: 1.4; }
+.news-impact {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.news-impact.bullish     { background: rgba(0,245,160,0.12);   color: var(--up); }
+.news-impact.bearish     { background: rgba(255,77,109,0.12);  color: var(--down); }
+.news-impact.neutral     { background: rgba(255,209,102,0.12); color: var(--warning); }
+.news-impact.speculation { background: rgba(168,85,247,0.15);  color: #c084fc; }
+.news-impact.expectation { background: rgba(168,85,247,0.15);  color: #c084fc; }
+
+/* PORTFOLIO PANEL */
+.portfolio-list { padding: 0.5rem 0; }
+.portfolio-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid rgba(30,45,69,0.4);
+}
+.portfolio-item:last-child { border-bottom: none; }
+.p-symbol { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
+.p-qty    { font-size: 0.75rem; color: var(--muted); }
+.p-val    { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+
+/* =============================================
+   PANIC OVERLAY
+   ============================================= */
+#panic-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(255,0,60,0.15); z-index: 100;
+  pointer-events: none; animation: panicFlash 0.3s ease;
+}
+#panic-overlay.active { display: block; }
+.panic-banner {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: var(--danger); color: white;
+  text-align: center; padding: 0.75rem;
+  font-family: var(--font-display); font-size: 1.4rem;
+  letter-spacing: 2px; z-index: 101;
+  animation: slideDown 0.3s ease;
+}
+
+/* =============================================
+   END SCREEN
+   ============================================= */
+#end-screen {
+  min-height: 100vh; display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 2rem; text-align: center;
+}
+#end-screen.active { display: flex; }
+.end-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2.5rem 2rem;
+  max-width: 540px; width: 100%;
+  animation: floatIn 0.6s ease both;
+}
+.trophy { font-size: 4rem; display: block; margin-bottom: 0.5rem; }
+.rating-title {
+  font-family: var(--font-display); font-size: 2.8rem;
+  letter-spacing: 2px; margin-bottom: 0.25rem;
+}
+.end-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem; margin: 1.5rem 0;
+}
+.end-stat { background: var(--surface2); border-radius: 10px; padding: 1rem; }
+.end-stat .label { font-size: 0.7rem; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem; }
+.end-stat .value { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; }
+.leaderboard-wrap { margin-top: 1.5rem; text-align: left; }
+.leaderboard-wrap h3 { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 0.75rem; }
+.lb-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 0.85rem;
+}
+.lb-rank { color: var(--warning); min-width: 24px; }
+.lb-name { flex: 1; padding: 0 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-val  { color: var(--accent); }
+.end-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+
+/* =============================================
+   NOTIFICATIONS
+   ============================================= */
+#notif-container {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  z-index: 200; display: flex; flex-direction: column;
+  gap: 0.5rem; pointer-events: none;
+}
+.notif {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: 8px;
+  padding: 0.6rem 1rem; font-size: 0.82rem; max-width: 280px;
+  animation: notifIn 0.3s ease both; pointer-events: none;
+}
+.notif.bad     { border-left-color: var(--danger); }
+.notif.warning { border-left-color: var(--warning); }
+
+/* =============================================
+   ANIMATIONS
+   ============================================= */
+@keyframes floatIn  { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin     { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+@keyframes pulse    { from { opacity:1; } to { opacity:0.5; } }
+@keyframes slideIn  { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideDown{ from { transform:translateY(-100%); } to { transform:translateY(0); } }
+@keyframes notifIn  { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+@keyframes notifOut { to { opacity:0; transform:translateX(30px); } }
+@keyframes panicFlash { 0%,100% { opacity:0.15; } 50% { opacity:0.3; } }
+@keyframes priceUp   { 0% { transform:scale(1); } 50% { transform:scale(1.15); color:var(--up); } 100% { transform:scale(1); } }
+@keyframes priceDown { 0% { transform:scale(1); } 50% { transform:scale(0.9); color:var(--down); } 100% { transform:scale(1); } }
+</style>
+</head>
+<body>
+
+<!-- =============================================
+     PANIC OVERLAY (full-screen red flash)
+     ============================================= -->
+<div id="panic-overlay"></div>
+
+<!-- =============================================
+     NOTIFICATION CONTAINER
+     ============================================= -->
+<div id="notif-container"></div>
+
+<!-- =============================================
+     SCREEN 1 — START
+     ============================================= -->
+<div id="start-screen" class="screen active">
+  <div class="logo-area">
+    <span class="logo-emoji">🚀</span>
+    <div class="game-title">CIA4U.01<br>CRYPTO SIM</div>
+    <div class="game-subtitle">© Grade 12 Economics · Simulation</div>
+  </div>
+
+  <div class="start-card">
+    <h2>How To Play 💰</h2>
+    <ul class="rules-list">
+      <li>You start with <strong>$10,000</strong> in fake money</li>
+      <li>Buy and sell funny fake coins before time runs out</li>
+      <li>Prices change every few seconds — watch out!</li>
+      <li>Random news events crash or pump the market</li>
+      <li>Highest portfolio value at the end wins 🏆</li>
+    </ul>
+    <p style="margin-top:1rem; font-size:0.8rem; color:var(--muted);">
+      ⚠️ This game illustrates speculation, volatility &amp; market psychology.
+    </p>
+
+    <div class="name-input-wrap">
+      <label for="player-name">Your trader name</label>
+      <input type="text" id="player-name" placeholder="e.g. Mr. Macleod" maxlength="20">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="startGame()">🚀 Start Trading</button>
+</div>
+
+<!-- =============================================
+     SCREEN 2 — GAME
+     ============================================= -->
+<div id="game-screen" class="screen">
+
+  <!-- TOP BAR -->
+  <div class="top-bar" style="margin-bottom:1rem; animation: floatIn 0.4s ease both;">
+    <div class="top-bar-title">💹 CIA4U.01 CRYPTO SIM</div>
+
+    <div class="timer-wrap">
+      <div class="timer-label">TIME LEFT</div>
+      <div class="timer" id="timer-display">04:00</div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-label">Cash</span>
+        <span class="stat-value" id="cash-display">$10,000.00</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Portfolio</span>
+        <span class="stat-value" id="portfolio-display">$10,000.00</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">P/L</span>
+        <span class="stat-value" id="pl-display">$0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="game-layout">
+
+    <!-- COIN TABLE -->
+    <div class="panel market-panel" style="animation: floatIn 0.4s ease 0.1s both;">
+      <div class="panel-header market-header-row">
+        <span class="panel-title">📈 Live Market</span>
+        <span class="panel-title" id="market-status">OPEN</span>
+      </div>
+      <!-- Desktop column header (hidden on mobile) -->
+      <div class="market-grid market-header desktop-market-only" id="market-col-header">
+        <div>COIN</div>
+        <div>PRICE</div>
+        <div>24H %</div>
+        <div>CHART</div>
+        <div>HELD</div>
+        <div>BUY / SELL</div>
+      </div>
+      <!-- Desktop coin rows (hidden on mobile) -->
+      <div id="coin-table-body" class="desktop-market-only">
+        <!-- Populated by JS -->
+      </div>
+      <!-- Mobile coin cards (hidden on desktop, shown on mobile) -->
+      <div id="mobile-market" class="mobile-market-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- NEWS FEED -->
+      <div class="panel" style="animation: floatIn 0.4s ease 0.2s both;">
+        <div class="panel-header">
+          <span class="panel-title">📰 Market News</span>
+        </div>
+        <div class="news-feed" id="news-feed">
+          <div class="news-item">
+            <div class="news-time">Just now</div>
+            <div class="news-text">Markets open. May the odds be in your portfolio.</div>
+            <span class="news-impact neutral">NEUTRAL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO -->
+      <div class="panel" style="animation: floatIn 0.4s ease 0.3s both;">
+        <div class="panel-header">
+          <span class="panel-title">💼 My Holdings</span>
+        </div>
+        <div class="portfolio-list" id="portfolio-list">
+          <div style="padding:1rem; color:var(--muted); font-size:0.8rem; text-align:center;">No holdings yet.<br>Buy something!</div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+  </div><!-- /game-layout -->
+
+</div><!-- /game-screen -->
+
+<!-- =============================================
+     SCREEN 3 — END
+     ============================================= -->
+<div id="end-screen" class="screen">
+  <div class="end-card">
+    <span class="trophy" id="end-trophy">🏆</span>
+    <div class="rating-title" id="end-rating">Crypto Genius</div>
+    <div style="color:var(--muted); font-size:0.9rem; margin-bottom:0.5rem;" id="end-player-name">Trader</div>
+
+    <div class="end-stats">
+      <div class="end-stat">
+        <div class="label">Final Value</div>
+        <div class="value" id="end-final-value">—</div>
+      </div>
+      <div class="end-stat">
+        <div class="label">Profit / Loss</div>
+        <div class="value" id="end-pl">—</div>
+      </div>
+      <div class="end-stat">
+        <div class="label">Started With</div>
+        <div class="value">$10,000</div>
+      </div>
+      <div class="end-stat">
+        <div class="label">Return %</div>
+        <div class="value" id="end-return">—</div>
+      </div>
+    </div>
+
+    <div class="leaderboard-wrap">
+      <h3>🏅 Leaderboard</h3>
+      <div id="leaderboard-list"></div>
+    </div>
+
+    <div class="end-buttons">
+      <button class="btn btn-primary" onclick="restartGame()">🔄 Play Again</button>
+      <button class="btn btn-danger" onclick="clearLeaderboard()">🗑 Clear Board</button>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     JAVASCRIPT — GAME ENGINE
+     ============================================= -->
+<script>
+/* =============================================
+   CONSTANTS & CONFIG
+   Edit GAME_DURATION to change game length (seconds).
+   Edit NEWS_MIN / NEWS_MAX to change how often news fires.
+   ============================================= */
+const GAME_DURATION   = 4 * 60;    // ← CHANGE GAME LENGTH HERE (seconds)
+const PRICE_INTERVAL  = 2500;       // ms between price updates
+const NEWS_MIN        = 15;         // min seconds between news events
+const NEWS_MAX        = 15;         // max seconds — fires every 15s exactly
+const STARTING_CASH   = 10000;
+
+/* =============================================
+   COIN DEFINITIONS
+   Edit names, emojis, basePrice, and volatility here.
+   Volatility: 1=stable, 2=normal, 4+=chaotic
+   ============================================= */
+const COIN_DEFS = [
+  {
+    id: 'NELSON', name: 'NelsonCoin', emoji: '😂',
+    basePrice: 420, volatility: 5.5,           // ← most volatile coin
+    desc: 'High risk. High reward. Very Nelson.',
+    history: []
+  },
+  {
+    id: 'JAYDEN', name: 'JaydenCoin', emoji: '😏',
+    basePrice: 0.42, volatility: 2.8,
+    desc: 'Hype-driven. Very online.',
+    history: []
+  },
+  {
+    id: 'NABIL', name: 'NabilCoin', emoji: '🥸',
+    basePrice: 12.50, volatility: 1.2,
+    desc: 'Motivational. Suspiciously stable.',
+    history: []
+  },
+  {
+    id: 'EDDY', name: 'EddyCoin', emoji: '🏀',
+    basePrice: 88, volatility: 2.0,
+    desc: 'All or nothing. Just like the playoffs.',
+    history: []
+  },
+  {
+    id: 'MACLEOD', name: 'MacleodCoin', emoji: '🧑',
+    basePrice: 1500, volatility: 0.9,
+    desc: 'Slow and steady. Very teacher energy.',
+    history: []
+  },
+  {
+    id: 'LDH', name: 'LDHCoin', emoji: '🦅',
+    basePrice: 0.001, volatility: 3.5,
+    desc: 'School-issued. Extremely sus.',
+    history: []
+  },
+];
+
+/* =============================================
+   NEWS EVENTS
+   Edit or add events here. Each needs:
+     text  — headline shown in the news feed
+     coin  — coin ID to affect, or 'ALL'
+     mult  — price multiplier (e.g. 2.0 = double, 0.5 = halve)
+     type  — 'bullish', 'bearish', or 'neutral'
+     panic — (optional) true to trigger the red panic overlay
+   ============================================= */
+const NEWS_EVENTS = [
+  // ── NELSON (most volatile — biggest swings) ──────────────────
+  { text: '😂 Nelson posts "📈" with no context. NelsonCoin goes parabolic.', coin: 'NELSON', mult: 4.8, type: 'bullish' },
+  { text: '😂 Nelson says "trust me bro." Investors trust him. NelsonCoin explodes.', coin: 'NELSON', mult: 3.9, type: 'bullish' },
+  { text: '😂 Nelson gets a haircut. Somehow NelsonCoin pumps 300%.', coin: 'NELSON', mult: 3.5, type: 'bullish' },
+  { text: '😂 Nelson arrives 10 minutes late to class. NelsonCoin collapses.', coin: 'NELSON', mult: 0.2, type: 'bearish' },
+  { text: '😂 Nelson forgets his homework. Investors panic sell NelsonCoin.', coin: 'NELSON', mult: 0.25, type: 'bearish' },
+  { text: '😂 Nelson posts a bad take on the group chat. NelsonCoin in freefall.', coin: 'NELSON', mult: 0.3, type: 'bearish' },
+  { text: '😂 Nelson and Jayden beef on Instagram. NelsonCoin and JaydenCoin both crash.', coin: 'ALL', mult: 0.55, type: 'bearish', panic: true },
+
+  // ── JAYDEN ───────────────────────────────────────────────────
+  { text: '😏 Jayden posts a fire thirst trap. JaydenCoin pumps hard.', coin: 'JAYDEN', mult: 3.2, type: 'bullish' },
+  { text: '😏 Jayden posts a bad thirst trap. JaydenCoin crashes.', coin: 'JAYDEN', mult: 0.3, type: 'bearish', guaranteed: true },
+  { text: '😏 Jayden hits a buzzer beater in gym class. JaydenCoin pumps.', coin: 'JAYDEN', mult: 2.1, type: 'bullish' },
+  { text: '😏 Jayden shows up to school in new fits. JaydenCoin surges.', coin: 'JAYDEN', mult: 1.9, type: 'bullish' },
+  { text: '😏 Jayden misses 3 layups in a row. JaydenCoin loses all momentum.', coin: 'JAYDEN', mult: 0.45, type: 'bearish' },
+  { text: '😏 Jayden says "it\'s giving" about the market. JaydenCoin pumps anyway.', coin: 'JAYDEN', mult: 1.7, type: 'bullish' },
+
+  // ── NABIL (ultimate frisbee theme) ───────────────────────────
+  { text: '🥸 Nabil hucks a perfect 60-yard disc. NabilCoin soars.', coin: 'NABIL', mult: 2.2, type: 'bullish' },
+  { text: '🥸 Nabil lays out for the winning catch in ultimate frisbee. NabilCoin skyrockets.', coin: 'NABIL', mult: 2.5, type: 'bullish' },
+  { text: '🥸 Nabil drops the disc in the end zone. NabilCoin fumbles.', coin: 'NABIL', mult: 0.55, type: 'bearish' },
+  { text: '🥸 Nabil calls a disputed foul. Market heated. NabilCoin dips.', coin: 'NABIL', mult: 0.7, type: 'bearish' },
+  { text: '🥸 Nabil leads team to the frisbee finals. NabilCoin hits a new high.', coin: 'NABIL', mult: 1.9, type: 'bullish' },
+  { text: '🥸 Nabil\'s frisbee lands on the school roof. NabilCoin stuck up there too.', coin: 'NABIL', mult: 0.65, type: 'bearish' },
+
+  // ── EDDY ─────────────────────────────────────────────────────
+  { text: '🏀 Eddy hits a game winner at lunch. EddyCoin jumps 180%.', coin: 'EDDY', mult: 2.8, type: 'bullish' },
+  { text: '🏀 Eddy called for a travel. EddyCoin fouls out.', coin: 'EDDY', mult: 0.4, type: 'bearish' },
+  { text: '🏀 Eddy drops 30 points in gym class. EddyCoin surges.', coin: 'EDDY', mult: 2.4, type: 'bullish' },
+  { text: '🏀 Eddy airballs the free throw. EddyCoin falls off.', coin: 'EDDY', mult: 0.5, type: 'bearish' },
+  { text: '🏀 Eddy signs a deal with the school vending machine. EddyCoin pumps.', coin: 'EDDY', mult: 2.0, type: 'bullish' },
+
+  // ── MACLEOD ──────────────────────────────────────────────────
+  { text: '🧑 Mr. Macleod announces a surprise quiz tomorrow. MacleodCoin tanks.', coin: 'MACLEOD', mult: 0.5, type: 'bearish' },
+  { text: '🧑 Mr. Macleod cancels the quiz. MacleodCoin recovers strongly.', coin: 'MACLEOD', mult: 2.1, type: 'bullish' },
+  { text: '🧑 Mr. Macleod explains inflation. Everyone becomes cautious. Market dips.', coin: 'ALL', mult: 0.82, type: 'bearish' },
+  { text: '🧑 Mr. Macleod gives everyone a free period. MacleodCoin pumps.', coin: 'MACLEOD', mult: 2.3, type: 'bullish' },
+  { text: '🧑 Mr. Macleod assigns a 10-page essay. MacleodCoin plummets.', coin: 'MACLEOD', mult: 0.45, type: 'bearish' },
+  { text: '🧑 Mr. Macleod brings Timbits to class. Market-wide euphoria.', coin: 'ALL', mult: 1.4, type: 'bullish' },
+
+  // ── LDH ──────────────────────────────────────────────────────
+  { text: '🦅 LDH cafeteria sells out of snacks. LDHCoin pumps on scarcity.', coin: 'LDH', mult: 4.0, type: 'bullish' },
+  { text: '🦅 LDH announces new dress code. Students riot. LDHCoin crashes.', coin: 'LDH', mult: 0.2, type: 'bearish' },
+  { text: '🦅 LDH wins a robotics competition. LDHCoin surges.', coin: 'LDH', mult: 3.2, type: 'bullish' },
+  { text: '🦅 LDH fire alarm goes off (again). LDHCoin volatile.', coin: 'LDH', mult: 0.35, type: 'bearish' },
+  { text: '🦅 LDH ranked #1 school in the city. LDHCoin hits all-time high.', coin: 'LDH', mult: 5.0, type: 'bullish' },
+  { text: '🦅 LDH WiFi goes down. LDHCoin disconnects too.', coin: 'LDH', mult: 0.3, type: 'bearish' },
+
+  // ── WHOLE MARKET ─────────────────────────────────────────────
+  { text: '📢 Whole class panic sells after a fake rumour. Market crashes.', coin: 'ALL', mult: 0.45, type: 'bearish', panic: true },
+  { text: '🚀 Someone in class says "to the moon" unironically. Everything pumps.', coin: 'ALL', mult: 1.5, type: 'bullish' },
+  { text: '📉 Economics class learns what a recession is. Market-wide existential crisis.', coin: 'ALL', mult: 0.6, type: 'bearish' },
+  { text: '📊 CIA4U.01 final project gets an extension. Market celebrates.', coin: 'ALL', mult: 1.35, type: 'bullish' },
+  { text: '💸 PANIC CRASH: Everyone holds and cries. Bag holders assemble.', coin: 'ALL', mult: 0.38, type: 'bearish', panic: true },
+  { text: '🎉 It\'s a supply day. Teacher is lenient. All coins up.', coin: 'ALL', mult: 1.3, type: 'bullish' },
+  { text: '📰 Anonymous tipster says the whole market is rigged. Everyone sells anyway.', coin: 'ALL', mult: 0.65, type: 'bearish' },
+  { text: '🤷 Absolutely nothing happens. Market shrugs.', coin: 'ALL', mult: 1.02, type: 'neutral' },
+  { text: '📊 Analysts predict "unprecedented volatility in the classroom economy". Duh.', coin: 'ALL', mult: 1.0, type: 'neutral' },
+
+  // ── SPECULATION & EXPECTATIONS (economics concept events) ────
+  // Tagged 'speculation' or 'expectation' — purple badge.
+  // The news reveals information. Players must decide using their
+  // economics knowledge whether to buy, sell, or hold. No hints given.
+  // Each event has a 8-second delay before the price moves.
+  { text: '🔮 SPECULATION: Rumour circulating in the hallway that JaydenCoin is about to make headlines. Source unverified. No one knows if it\'s good or bad.', coin: 'JAYDEN', mult: 2.1, type: 'speculation', guaranteed: true, delayed: true },
+  { text: '🔮 SPECULATION: Anonymous post claims Mr. Macleod is planning a major announcement about MacleodCoin this week. Details unknown. Could be anything.', coin: 'MACLEOD', mult: 1.9, type: 'speculation', guaranteed: true, delayed: true },
+  { text: '📅 EXPECTATION: The market has been watching Nabil\'s frisbee team heading into the finals. Investors are forming expectations — but the outcome is still uncertain.', coin: 'NABIL', mult: 1.8, type: 'expectation', guaranteed: true, delayed: true },
+  { text: '📅 EXPECTATION: Word is spreading that Eddy has a big game coming up. The market is pricing in what it thinks will happen. The game hasn\'t been played yet.', coin: 'EDDY', mult: 1.7, type: 'expectation', guaranteed: true, delayed: true },
+];
+
+// Special scripted event fired near end of game — Nelson's big finale
+const NELSON_ENDGAME_EVENT = {
+  text: '😂🚀 BREAKING: Nelson is seen moonwalking in the hallway. NelsonCoin PUMPS.',
+  coin: 'NELSON', mult: 3.2, type: 'bullish'
+};
+
+/* =============================================
+   PERFORMANCE RATINGS
+   Edit labels and emojis here.
+   ============================================= */
+const RATINGS = [
+  { min: 1.15,   label: 'HACKER',     emoji: '🤑', color: '#00f5a0' },
+  { min: 1.001,  label: 'PRO',        emoji: '😎', color: '#00b4d8' },
+  { min: 0.999,  label: 'BROKE EVEN', emoji: '😐', color: '#ffd166', brokeEven: true },
+  { min: 0,      label: 'NOOB',       emoji: '🤓', color: '#ffa040' },
+];
+
+/* =============================================
+   GAME STATE
+   ============================================= */
+// qtyValues stores the user-typed quantity for each coin so it
+// doesn't reset when the price table re-renders.
+let qtyValues = {};
+
+let state = {
+  cash: STARTING_CASH,
+  coins: [],          // [{...coinDef, price, prevPrice}]
+  holdings: {},       // { coinId: quantity }
+  timeLeft: GAME_DURATION,
+  running: false,
+  playerName: 'Anonymous',
+  newsQueue: [],      // pre-built scripted queue for first-round coverage
+  nelsonBoomFired: false,
+  gameTimer: null,
+  priceTimer: null,
+  newsTimer: null,
+  elapsed: 0,
+};
+
+/* =============================================
+   UTILITY FUNCTIONS
+   ============================================= */
+function fmt(n)    { return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fmtN(n)   { return n.toFixed(4).replace(/\.?0+$/, '') || '0'; }
+function rand(a,b) { return Math.random() * (b - a) + a; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function portfolioValue() {
+  return state.coins.reduce((sum, c) => {
+    return sum + (state.holdings[c.id] || 0) * c.price;
+  }, 0);
+}
+
+function totalValue() { return state.cash + portfolioValue(); }
+
+/* =============================================
+   SHOW SCREEN
+   ============================================= */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* =============================================
+   START GAME
+   ============================================= */
+function startGame() {
+  const nameEl = document.getElementById('player-name');
+  state.playerName = nameEl.value.trim() || 'Anonymous Trader';
+
+  // Init coins
+  state.coins = COIN_DEFS.map(def => ({
+    ...def,
+    price:     def.basePrice,
+    prevPrice: def.basePrice,
+    history:   [def.basePrice],
+    change24:  0,
+  }));
+
+  state.cash     = STARTING_CASH;
+  state.holdings = {};
+  state.timeLeft = GAME_DURATION;
+  state.elapsed  = 0;
+  state.running  = true;
+  state.nelsonBoomFired = false;
+  qtyValues      = {};  // reset quantity inputs
+  buildNewsQueue();     // build the scripted first-round queue
+
+  showScreen('game-screen');
+  document.getElementById('coin-table-body').innerHTML = ''; // fresh desktop rows
+  document.getElementById('mobile-market').innerHTML = '';    // fresh mobile cards
+  renderTable();
+  updateStats();
+  renderPortfolio();
+
+  // Clear old news
+  document.getElementById('news-feed').innerHTML = `
+    <div class="news-item">
+      <div class="news-time">00:00</div>
+      <div class="news-text">Markets open! Good luck, ${state.playerName}. You'll need it. 😬</div>
+      <span class="news-impact neutral">NEUTRAL</span>
+    </div>`;
+
+  // Start timers
+  state.gameTimer  = setInterval(tickGame,  1000);
+  state.priceTimer = setInterval(tickPrices, PRICE_INTERVAL);
+  scheduleNews();
+}
+
+/* =============================================
+   GAME TICK (every second)
+   ============================================= */
+function tickGame() {
+  state.timeLeft--;
+  state.elapsed++;
+  updateTimer();
+  updateStats();
+
+  if (state.timeLeft <= 0) endGame();
+}
+
+function updateTimer() {
+  const m = Math.floor(state.timeLeft / 60);
+  const s = state.timeLeft % 60;
+  const el = document.getElementById('timer-display');
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.classList.toggle('urgent', state.timeLeft <= 60);
+}
+
+/* =============================================
+   PRICE TICK (every PRICE_INTERVAL ms)
+   ============================================= */
+function tickPrices() {
+  if (!state.running) return;
+
+  state.coins.forEach(coin => {
+    coin.prevPrice = coin.price;
+
+    // Random walk with reversion to base
+    const vol   = coin.volatility * 0.04;
+    const drift = (coin.basePrice - coin.price) * 0.005; // mean reversion
+    const shock = rand(-vol, vol);
+    let newPrice = coin.price * (1 + shock) + drift;
+
+    // Floor at 0.0001
+    newPrice = Math.max(newPrice, 0.0001);
+    coin.price = newPrice;
+
+    // Track 24h change vs first price in history
+    const firstPrice = coin.history[0] || coin.basePrice;
+    coin.change24 = ((coin.price - firstPrice) / firstPrice) * 100;
+
+    // Keep rolling history (last 20 points)
+    coin.history.push(coin.price);
+    if (coin.history.length > 20) coin.history.shift();
+  });
+
+  renderTable();
+  updateStats();
+  renderPortfolio();
+}
+
+/* =============================================
+   BUILD NEWS QUEUE
+   Guarantees: one event per coin in the first pass, the Jayden
+   bad thirst trap fires in the first half, and remaining slots
+   fill with shuffled randoms. The Nelson endgame boom is handled
+   separately by a timed trigger, not the queue.
+   ============================================= */
+function buildNewsQueue() {
+  const coinIds = ['NELSON', 'JAYDEN', 'NABIL', 'EDDY', 'MACLEOD', 'LDH'];
+
+  // ── Guaranteed non-spec/exp events ──
+  const mustHave = [];
+
+  // Jayden bad thirst trap
+  const jaydenBad = NEWS_EVENTS.find(e => e.guaranteed && e.coin === 'JAYDEN' && e.type === 'bearish');
+  if (jaydenBad) mustHave.push(jaydenBad);
+
+  // One event per coin not already covered
+  const coveredCoins = new Set(mustHave.map(e => e.coin));
+  coinIds.forEach(id => {
+    if (coveredCoins.has(id)) return;
+    const pool = NEWS_EVENTS.filter(e => e.coin === id && e.type !== 'speculation' && e.type !== 'expectation');
+    if (pool.length) mustHave.push(pick(pool));
+  });
+
+  // Shuffle guaranteed block + fill with regular randoms
+  const shuffled = shuffle(mustHave);
+  const extras   = shuffle(NEWS_EVENTS.filter(e =>
+    !shuffled.includes(e) && e.type !== 'speculation' && e.type !== 'expectation'
+  ));
+  const regular  = [...shuffled, ...extras];
+
+  // ── Spec/exp events: distribute evenly throughout the queue ──
+  // 4-min game @ 10s = ~24 news slots. Spread 4 spec/exp events
+  // across the middle portion (slots 3–20) so they don't all
+  // appear at the start or get bunched at the end.
+  const specExp  = shuffle(NEWS_EVENTS.filter(e => e.type === 'speculation' || e.type === 'expectation'));
+  const queueLen = Math.max(regular.length, 20);
+  const insertAt = [
+    Math.floor(queueLen * 0.20),
+    Math.floor(queueLen * 0.40),
+    Math.floor(queueLen * 0.60),
+    Math.floor(queueLen * 0.80),
+  ];
+
+  // Build final queue by inserting spec/exp at spread positions
+  const final = [...regular];
+  specExp.forEach((event, i) => {
+    const pos = Math.min(insertAt[i] ?? final.length, final.length);
+    final.splice(pos, 0, event);
+  });
+
+  state.newsQueue = final;
+}
+
+/* =============================================
+   SCHEDULE NEWS
+   Normal: every 10s. Last 30s: every 6s (rapid fire).
+   ============================================= */
+function scheduleNews() {
+  if (!state.running) return;
+  const delay = state.timeLeft <= 30 ? 6000 : 10000;
+  state.newsTimer = setTimeout(triggerNews, delay);
+}
+
+function triggerNews() {
+  if (!state.running) return;
+
+  // ── Nelson endgame boom: fires once when ≤45s remain ──
+  if (!state.nelsonBoomFired && state.timeLeft <= 45) {
+    state.nelsonBoomFired = true;
+    fireEvent(NELSON_ENDGAME_EVENT);
+    scheduleNews();
+    return;
+  }
+
+  // ── Pull next from queue, fall back to weighted random ──
+  let event;
+  if (state.newsQueue.length > 0) {
+    event = state.newsQueue.shift();
+  } else {
+    // De-weight Nelson: 1 copy vs 3 for everyone else
+    const weightedPool = [];
+    NEWS_EVENTS.forEach(e => {
+      if (e.type === 'speculation' || e.type === 'expectation') return; // spec/exp only fire from queue
+      const copies = e.coin === 'NELSON' ? 1 : 3;
+      for (let i = 0; i < copies; i++) weightedPool.push(e);
+    });
+    event = pick(weightedPool);
+  }
+
+  fireEvent(event);
+  scheduleNews();
+}
+
+function fireEvent(event) {
+  addNewsItem(event);
+
+  // Speculation/expectation: show the news immediately but delay
+  // the price effect by 5 seconds so players can react first.
+  if (event.delayed) {
+    showCountdown(event);
+    setTimeout(() => {
+      if (!state.running) return;
+      applyPriceEffect(event);
+    }, 8000);
+  } else {
+    applyPriceEffect(event);
+  }
+}
+
+function applyPriceEffect(event) {
+  state.coins.forEach(coin => {
+    if (event.coin === 'ALL' || event.coin === coin.id) {
+      coin.prevPrice = coin.price;
+      coin.price *= event.mult;
+      coin.basePrice *= (event.mult > 1 ? 1.05 : 0.97);
+      coin.price = Math.max(coin.price, 0.0001);
+    }
+  });
+
+  if (event.panic) triggerPanic();
+
+  renderTable();
+  updateStats();
+  renderPortfolio();
+}
+
+// Shows a brief countdown banner for delayed spec/exp events
+function showCountdown(event) {
+  const existing = document.getElementById('spec-countdown');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'spec-countdown';
+  banner.style.cssText = `
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    background: rgba(168,85,247,0.95); color: #fff;
+    font-family: var(--font-mono); font-size: 0.85rem;
+    padding: 0.5rem 1.2rem; border-radius: 8px;
+    z-index: 300; text-align: center; letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(168,85,247,0.5);
+    animation: floatIn 0.3s ease both;
+  `;
+
+  let secs = 8;
+  banner.textContent = `⏳ MARKET REACTS IN ${secs}s — ACT NOW`;
+
+  document.body.appendChild(banner);
+
+  const tick = setInterval(() => {
+    secs--;
+    if (secs <= 0) {
+      clearInterval(tick);
+      banner.remove();
+    } else {
+      banner.textContent = `⏳ MARKET REACTS IN ${secs}s — ACT NOW`;
+    }
+  }, 1000);
+
+  // Safety cleanup
+  setTimeout(() => { clearInterval(tick); banner.remove(); }, 9000);
+}
+
+function addNewsItem(event) {
+  const m = Math.floor((GAME_DURATION - state.timeLeft) / 60);
+  const s = (GAME_DURATION - state.timeLeft) % 60;
+  const time = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const feed = document.getElementById('news-feed');
+  const item = document.createElement('div');
+  item.className = 'news-item';
+  item.innerHTML = `
+    <div class="news-time">${time}</div>
+    <div class="news-text">${event.text}</div>
+    <span class="news-impact ${event.type}">${event.type.toUpperCase()}</span>
+  `;
+  feed.insertBefore(item, feed.firstChild);
+
+  // Trim old news
+  while (feed.children.length > 15) feed.removeChild(feed.lastChild);
+
+  // Toast notification
+  showNotif(event.text, event.type === 'bearish' ? 'bad' : event.type === 'neutral' ? 'warning' : '');
+}
+
+/* =============================================
+   PANIC CRASH
+   ============================================= */
+function triggerPanic() {
+  const overlay = document.getElementById('panic-overlay');
+  overlay.classList.add('active');
+
+  // Banner
+  let banner = document.createElement('div');
+  banner.className = 'panic-banner';
+  banner.textContent = '🚨 MARKET PANIC CRASH 🚨';
+  document.body.appendChild(banner);
+
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    banner.remove();
+  }, 3000);
+
+  playSound('panic');
+}
+
+/* =============================================
+   RENDER MARKET
+   Two completely separate renders:
+   1. renderTable()     — desktop flex rows in #coin-table-body
+   2. renderMobileCard() — mobile grid cards in #mobile-market
+   Both share qtyValues{} so qty inputs don't reset.
+   CSS hides one set based on screen width.
+   ============================================= */
+function renderTable() {
+  const tbody = document.getElementById('coin-table-body');
+
+  state.coins.forEach(coin => {
+    const held   = state.holdings[coin.id] || 0;
+    const isUp   = coin.price >= coin.prevPrice;
+    const chSign = coin.change24 >= 0 ? '+' : '';
+
+    // ── DESKTOP ROW ──
+    let row = document.getElementById(`row-${coin.id}`);
+
+    if (!row) {
+      if (!(coin.id in qtyValues)) qtyValues[coin.id] = 1;
+
+      row = document.createElement('div');
+      row.className = 'market-grid coin-row';
+      row.id = `row-${coin.id}`;
+      row.innerHTML = `
+        <div class="coin-info">
+          <span class="coin-symbol">${coin.emoji} ${coin.id}</span>
+          <span class="coin-full-name">${coin.name}</span>
+        </div>
+        <div class="price-cell" id="price-${coin.id}">${fmtPrice(coin.price)}</div>
+        <div class="change-cell">
+          <span class="change-badge" id="badge-${coin.id}"></span>
+        </div>
+        <div class="chart-cell">
+          <canvas class="sparkline" id="spark-${coin.id}" width="90" height="32"></canvas>
+        </div>
+        <div class="held-cell" id="held-${coin.id}">${held > 0 ? fmtN(held) : '—'}</div>
+        <div class="trade-controls">
+          <input type="number" class="qty-input" id="qty-${coin.id}"
+                 value="${qtyValues[coin.id]}" min="0.0001" step="any"
+                 oninput="qtyValues['${coin.id}']=parseFloat(this.value)||1; syncQty('${coin.id}')">
+          <button class="btn btn-buy btn-small" onclick="buyCoin('${coin.id}')">BUY</button>
+          <button class="btn btn-buy btn-small" onclick="buyMax('${coin.id}')">MAX↑</button>
+          <button class="btn btn-sell btn-small" id="sell-btn-${coin.id}"
+                  onclick="sellCoin('${coin.id}')" ${held===0?'disabled':''}>SELL</button>
+          <button class="btn btn-sell btn-small" id="sellmax-btn-${coin.id}"
+                  onclick="sellMax('${coin.id}')" ${held===0?'disabled':''}>MAX↓</button>
+        </div>`;
+      tbody.appendChild(row);
+    }
+
+    // Update desktop dynamic elements
+    const priceEl = document.getElementById(`price-${coin.id}`);
+    if (priceEl) {
+      priceEl.textContent = fmtPrice(coin.price);
+      priceEl.style.animation = '';
+      requestAnimationFrame(() => {
+        priceEl.style.animation = isUp ? 'priceUp 0.6s ease' : 'priceDown 0.6s ease';
+        priceEl.style.color = isUp ? 'var(--up)' : 'var(--down)';
+      });
+    }
+    const badgeEl = document.getElementById(`badge-${coin.id}`);
+    if (badgeEl) {
+      badgeEl.className = `change-badge ${coin.change24 >= 0 ? 'up' : 'down'}`;
+      badgeEl.textContent = `${coin.change24 >= 0 ? '▲' : '▼'} ${chSign}${coin.change24.toFixed(1)}%`;
+    }
+    const heldEl = document.getElementById(`held-${coin.id}`);
+    if (heldEl) heldEl.textContent = held > 0 ? fmtN(held) : '—';
+    const sellBtn    = document.getElementById(`sell-btn-${coin.id}`);
+    const sellMaxBtn = document.getElementById(`sellmax-btn-${coin.id}`);
+    if (sellBtn)    sellBtn.disabled    = held === 0;
+    if (sellMaxBtn) sellMaxBtn.disabled = held === 0;
+    drawSparkline(`spark-${coin.id}`, coin.history);
+
+    // ── MOBILE CARD ──
+    renderMobileCard(coin, held, isUp, chSign);
+  });
+}
+
+/* =============================================
+   RENDER MOBILE CARD
+   Completely separate from desktop rows.
+   Uses its own IDs (m-price-, m-badge-, etc.)
+   so there are no conflicts.
+   ============================================= */
+function renderMobileCard(coin, held, isUp, chSign) {
+  const mobileBody = document.getElementById('mobile-market');
+  let card = document.getElementById(`mcard-${coin.id}`);
+
+  if (!card) {
+    card = document.createElement('div');
+    card.className = 'mobile-coin-card';
+    card.id = `mcard-${coin.id}`;
+    card.innerHTML = `
+      <div class="mobile-coin-left">
+        <span class="coin-symbol">${coin.emoji} ${coin.id}</span>
+        <span class="coin-full-name">${coin.name}</span>
+        <div class="mobile-price-row">
+          <span class="price-cell" id="m-price-${coin.id}">${fmtPrice(coin.price)}</span>
+          <span class="change-badge" id="m-badge-${coin.id}"></span>
+        </div>
+        <span class="mobile-held" id="m-held-${coin.id}">Held: ${held > 0 ? fmtN(held) : '—'}</span>
+      </div>
+      <div class="mobile-coin-right">
+        <input type="number" class="qty-input" id="m-qty-${coin.id}"
+               value="${qtyValues[coin.id]}" min="0.0001" step="any"
+               oninput="qtyValues['${coin.id}']=parseFloat(this.value)||1; syncQty('${coin.id}')">
+        <button class="btn btn-buy btn-small" onclick="buyCoin('${coin.id}')">BUY</button>
+        <button class="btn btn-buy btn-small" onclick="buyMax('${coin.id}')">MAX↑</button>
+        <button class="btn btn-sell btn-small" id="m-sell-${coin.id}"
+                onclick="sellCoin('${coin.id}')" ${held===0?'disabled':''}>SELL</button>
+        <button class="btn btn-sell btn-small" id="m-sellmax-${coin.id}"
+                onclick="sellMax('${coin.id}')" ${held===0?'disabled':''}>MAX↓</button>
+      </div>`;
+    mobileBody.appendChild(card);
+  }
+
+  // Update mobile dynamic elements
+  const mPrice = document.getElementById(`m-price-${coin.id}`);
+  if (mPrice) {
+    mPrice.textContent = fmtPrice(coin.price);
+    mPrice.style.animation = '';
+    requestAnimationFrame(() => {
+      mPrice.style.animation = isUp ? 'priceUp 0.6s ease' : 'priceDown 0.6s ease';
+      mPrice.style.color = isUp ? 'var(--up)' : 'var(--down)';
+    });
+  }
+  const mBadge = document.getElementById(`m-badge-${coin.id}`);
+  if (mBadge) {
+    mBadge.className = `change-badge ${coin.change24 >= 0 ? 'up' : 'down'}`;
+    mBadge.textContent = `${coin.change24 >= 0 ? '▲' : '▼'} ${chSign}${coin.change24.toFixed(1)}%`;
+  }
+  const mSell    = document.getElementById(`m-sell-${coin.id}`);
+  const mSellMax = document.getElementById(`m-sellmax-${coin.id}`);
+  if (mSell)    mSell.disabled    = held === 0;
+  if (mSellMax) mSellMax.disabled = held === 0;
+
+  // Update mobile held display
+  const mHeld = document.getElementById(`m-held-${coin.id}`);
+  if (mHeld) mHeld.textContent = `Held: ${held > 0 ? fmtN(held) : '—'}`;
+}
+
+/* Sync qty value between desktop and mobile inputs */
+function syncQty(coinId) {
+  const desktopInput = document.getElementById(`qty-${coinId}`);
+  const mobileInput  = document.getElementById(`m-qty-${coinId}`);
+  if (desktopInput) desktopInput.value = qtyValues[coinId];
+  if (mobileInput)  mobileInput.value  = qtyValues[coinId];
+}
+
+/* =============================================
+   SPARKLINE MINI CHART
+   ============================================= */
+function drawSparkline(canvasId, data) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (data.length < 2) return;
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 2;
+
+  const isUp = data[data.length - 1] >= data[0];
+  const color = isUp ? '#00f5a0' : '#ff4d6d';
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 4;
+  ctx.beginPath();
+
+  data.forEach((val, i) => {
+    const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((val - min) / range) * (h - pad * 2);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+}
+
+/* =============================================
+   FORMAT PRICE (handles tiny values)
+   ============================================= */
+function fmtPrice(p) {
+  if (p < 0.01)   return '$' + p.toFixed(6);
+  if (p < 1)      return '$' + p.toFixed(4);
+  if (p < 100)    return '$' + p.toFixed(2);
+  return '$' + p.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/* =============================================
+   UPDATE STATS BAR
+   ============================================= */
+function updateStats() {
+  const pv  = portfolioValue();
+  const tv  = state.cash + pv;
+  const pl  = tv - STARTING_CASH;
+
+  document.getElementById('cash-display').textContent = fmt(state.cash);
+  document.getElementById('portfolio-display').textContent = fmt(tv);
+
+  const plEl = document.getElementById('pl-display');
+  plEl.textContent = (pl >= 0 ? '+' : '') + fmt(pl);
+  plEl.className = 'stat-value ' + (pl >= 0 ? 'positive' : 'negative');
+}
+
+/* =============================================
+   RENDER PORTFOLIO SIDEBAR
+   ============================================= */
+function renderPortfolio() {
+  const list = document.getElementById('portfolio-list');
+  const held = Object.entries(state.holdings).filter(([,q]) => q > 0);
+
+  if (held.length === 0) {
+    list.innerHTML = '<div style="padding:1rem; color:var(--muted); font-size:0.8rem; text-align:center;">No holdings yet.<br>Buy something!</div>';
+    return;
+  }
+
+  list.innerHTML = held.map(([id, qty]) => {
+    const coin = state.coins.find(c => c.id === id);
+    if (!coin) return '';
+    const val = qty * coin.price;
+    return `
+      <div class="portfolio-item">
+        <div>
+          <div class="p-symbol">${coin.emoji} ${id}</div>
+          <div class="p-qty">${fmtN(qty)} units</div>
+        </div>
+        <div class="p-val">${fmt(val)}</div>
+      </div>`;
+  }).join('');
+}
+
+/* =============================================
+   BUY COIN
+   ============================================= */
+function buyCoin(coinId) {
+  const coin = state.coins.find(c => c.id === coinId);
+  const qty  = parseFloat(qtyValues[coinId]) || 1;
+
+  if (!coin || qty <= 0) return;
+
+  const cost = coin.price * qty;
+  if (cost > state.cash) {
+    showNotif(`❌ Not enough cash! Need ${fmt(cost)}`, 'bad');
+    return;
+  }
+
+  state.cash -= cost;
+  state.holdings[coinId] = (state.holdings[coinId] || 0) + qty;
+
+  showNotif(`✅ Bought ${fmtN(qty)} ${coinId} for ${fmt(cost)}`);
+  playSound('buy');
+  renderTable();
+  updateStats();
+  renderPortfolio();
+}
+
+/* =============================================
+   BUY MAX — buy as many as cash allows
+   ============================================= */
+function buyMax(coinId) {
+  const coin = state.coins.find(c => c.id === coinId);
+  if (!coin || coin.price <= 0) return;
+
+  const maxQty = state.cash / coin.price;
+  if (maxQty < 0.0001) {
+    showNotif('❌ Not enough cash to buy any!', 'bad');
+    return;
+  }
+
+  qtyValues[coinId] = maxQty;
+  // Sync both inputs
+  const input = document.getElementById(`qty-${coinId}`);
+  if (input) input.value = maxQty;
+  const mInput = document.getElementById(`m-qty-${coinId}`);
+  if (mInput) mInput.value = maxQty;
+
+  buyCoin(coinId);
+}
+
+/* =============================================
+   SELL COIN
+   ============================================= */
+function sellCoin(coinId) {
+  const coin = state.coins.find(c => c.id === coinId);
+  const held = state.holdings[coinId] || 0;
+  const qty  = Math.min(parseFloat(qtyValues[coinId]) || held, held);
+
+  if (!coin || qty <= 0 || held === 0) {
+    showNotif('❌ Nothing to sell!', 'bad');
+    return;
+  }
+
+  const proceeds = coin.price * qty;
+  state.cash += proceeds;
+  state.holdings[coinId] = held - qty;
+  if (state.holdings[coinId] <= 0.000001) delete state.holdings[coinId];
+
+  showNotif(`💰 Sold ${fmtN(qty)} ${coinId} for ${fmt(proceeds)}`);
+  playSound('sell');
+  renderTable();
+  updateStats();
+  renderPortfolio();
+}
+
+/* =============================================
+   SELL MAX — sell all of a coin
+   ============================================= */
+function sellMax(coinId) {
+  const held = state.holdings[coinId] || 0;
+  if (held === 0) {
+    showNotif('❌ Nothing to sell!', 'bad');
+    return;
+  }
+  qtyValues[coinId] = held;
+  const input = document.getElementById(`qty-${coinId}`);
+  if (input) input.value = held;
+  const mInput = document.getElementById(`m-qty-${coinId}`);
+  if (mInput) mInput.value = held;
+  sellCoin(coinId);
+}
+
+/* =============================================
+   END GAME
+   ============================================= */
+function endGame() {
+  state.running = false;
+  clearInterval(state.gameTimer);
+  clearInterval(state.priceTimer);
+  clearTimeout(state.newsTimer);
+
+  const tv    = totalValue();
+  const pl    = tv - STARTING_CASH;
+  const ratio = tv / STARTING_CASH;
+  const pct   = ((ratio - 1) * 100).toFixed(1);
+
+  // Broke-even check: within $0.50 of starting cash counts as broke even
+  const brokeEven = Math.abs(pl) < 0.50;
+  const displayTV = brokeEven ? STARTING_CASH : tv;
+  const displayPL = brokeEven ? 0 : pl;
+  const displayPct = brokeEven ? '0.0' : pct;
+
+  // Rating — broke even gets its own tier
+  let rating;
+  if (brokeEven) {
+    rating = RATINGS.find(r => r.brokeEven);
+  } else {
+    rating = RATINGS.find(r => !r.brokeEven && ratio >= r.min) || RATINGS[RATINGS.length - 1];
+  }
+
+  // Update leaderboard
+  saveToLeaderboard(state.playerName, tv);
+
+  // Populate end screen
+  document.getElementById('end-trophy').textContent       = rating.emoji;
+  document.getElementById('end-rating').textContent       = rating.label;
+  document.getElementById('end-rating').style.color       = rating.color;
+  document.getElementById('end-player-name').textContent  = state.playerName;
+  document.getElementById('end-final-value').textContent  = fmt(displayTV);
+  document.getElementById('end-final-value').style.color  = displayPL >= 0 ? 'var(--up)' : 'var(--down)';
+  document.getElementById('end-pl').textContent           = (displayPL >= 0 ? '+' : '') + fmt(displayPL);
+  document.getElementById('end-pl').style.color           = displayPL >= 0 ? 'var(--up)' : 'var(--down)';
+  document.getElementById('end-return').textContent       = (parseFloat(displayPct) >= 0 ? '+' : '') + displayPct + '%';
+  document.getElementById('end-return').style.color       = parseFloat(displayPct) >= 0 ? 'var(--up)' : 'var(--down)';
+
+  renderLeaderboard();
+  showScreen('end-screen');
+  playSound('end');
+}
+
+/* =============================================
+   LEADERBOARD (localStorage)
+   ============================================= */
+function saveToLeaderboard(name, value) {
+  try {
+    const lb = JSON.parse(localStorage.getItem('ccs_lb') || '[]');
+    lb.push({ name, value, date: new Date().toLocaleDateString() });
+    lb.sort((a, b) => b.value - a.value);
+    lb.splice(10, lb.length); // keep top 10
+    localStorage.setItem('ccs_lb', JSON.stringify(lb));
+  } catch(e) {}
+}
+
+function renderLeaderboard() {
+  try {
+    const lb  = JSON.parse(localStorage.getItem('ccs_lb') || '[]');
+    const el  = document.getElementById('leaderboard-list');
+    if (lb.length === 0) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:0.5rem 0;">No scores yet.</div>';
+      return;
+    }
+    el.innerHTML = lb.map((e, i) => `
+      <div class="lb-row">
+        <span class="lb-rank">${i + 1}.</span>
+        <span class="lb-name">${e.name}</span>
+        <span class="lb-val">${fmt(e.value)}</span>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+function clearLeaderboard() {
+  localStorage.removeItem('ccs_lb');
+  renderLeaderboard();
+}
+
+/* =============================================
+   RESTART GAME
+   ============================================= */
+function restartGame() {
+  clearInterval(state.gameTimer);
+  clearInterval(state.priceTimer);
+  clearTimeout(state.newsTimer);
+  showScreen('start-screen');
+}
+
+/* =============================================
+   NOTIFICATIONS
+   ============================================= */
+function showNotif(msg, type = '') {
+  const container = document.getElementById('notif-container');
+  const el = document.createElement('div');
+  el.className = `notif ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+
+  setTimeout(() => {
+    el.style.animation = 'notifOut 0.3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, 8000);
+
+  // Trim to 4 max
+  while (container.children.length > 4) {
+    container.removeChild(container.firstChild);
+  }
+}
+
+/* =============================================
+   SOUND EFFECTS (Web Audio API — no files needed)
+   ============================================= */
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return audioCtx;
+}
+
+function playBeep(freq, dur, type = 'sine', vol = 0.1) {
+  const ctx = getAudio();
+  if (!ctx) return;
+  try {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+function playSound(type) {
+  switch(type) {
+    case 'buy':   playBeep(880, 0.1); playBeep(1100, 0.1); break;
+    case 'sell':  playBeep(660, 0.1); playBeep(440, 0.15, 'square'); break;
+    case 'panic': [200,180,160,140].forEach((f,i) => setTimeout(() => playBeep(f, 0.2, 'sawtooth', 0.15), i*80)); break;
+    case 'end':   [523,659,784,1046].forEach((f,i) => setTimeout(() => playBeep(f, 0.2), i*120)); break;
+  }
+}
+
+/* =============================================
+   KEYBOARD SHORTCUTS (optional nicety)
+   ============================================= */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('start-screen').classList.contains('active')) {
+    startGame();
+  }
+});
+
+/* =============================================
+   INIT — show start screen
+   ============================================= */
+showScreen('start-screen');
+</script>
+</body>
+</html>
